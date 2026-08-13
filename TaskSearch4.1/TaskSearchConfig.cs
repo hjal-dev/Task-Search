@@ -70,7 +70,7 @@ namespace TaskSearch
             FieldWidth = config.Bind(
                 SectionLayout, "Width", 340f,
                 new ConfigDescription(
-                    "Width in canvas units. 340 approximates live Tarkov's search box.",
+                    "Width in canvas units.",
                     new AcceptableValueRange<float>(80f, 1200f)));
 
             FieldHeight = config.Bind(
@@ -88,8 +88,7 @@ namespace TaskSearch
             FieldOffsetY = config.Bind(
                 SectionLayout, "Vertical Offset", 100f,
                 new ConfigDescription(
-                    "Measured up from the top of the task list. The default clears the column headers and " +
-                    "lands the field in the tab row, where live Tarkov puts its search box.",
+                    "Lower Values goes down, Higher Values goes up, duhhhh.",
                     new AcceptableValueRange<float>(-300f, 300f)));
 
             config.SettingChanged += OnSettingChanged;
