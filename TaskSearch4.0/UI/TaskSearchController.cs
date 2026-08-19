@@ -27,6 +27,11 @@ namespace TaskSearch.UI
         private List<GameObject> _searchIcons;
         private FavoriteQuests _pinned;
         private bool _pinnedOnly;
+        private bool _pinSpritesLoaded;
+        private Sprite _pinOffSprite;
+        private Sprite _pinOnSprite;
+        private Color _pinOffColor;
+        private Color _pinOnColor;
         private TMP_Text _descriptionText;
         private bool _descriptionRichText;
         private string _highlightSource;
@@ -395,20 +400,38 @@ namespace TaskSearch.UI
 
         private void EnsurePinSprite()
         {
-            if (_pinButton == null || TaskSearchPinButton.HasSprite(_pinButton))
+            if (_pinButton == null)
             {
                 return;
             }
 
-            Sprite sprite = TaskSearchPinButton.FindGamePinSprite(_panel);
+            if (!_pinSpritesLoaded)
+            {
+                if (!TaskSearchPinButton.TryReadSprites(
+                        _panel,
+                        out _pinOffSprite, out _pinOffColor,
+                        out _pinOnSprite, out _pinOnColor))
+                {
+                    return;
+                }
 
-            if (sprite == null)
+                _pinSpritesLoaded = true;
+            }
+
+            ApplyPinState();
+        }
+
+        private void ApplyPinState()
+        {
+            if (!_pinSpritesLoaded)
             {
                 return;
             }
 
-            TaskSearchPinButton.ApplySprite(_pinButton, sprite);
-            TaskSearchPinButton.SetActive(_pinButton, _pinnedOnly);
+            TaskSearchPinButton.SetState(
+                _pinButton,
+                _pinnedOnly ? _pinOnSprite : _pinOffSprite,
+                _pinnedOnly ? _pinOnColor : _pinOffColor);
         }
 
         private void ApplyQuery()
@@ -497,7 +520,7 @@ namespace TaskSearch.UI
         private void TogglePinnedOnly()
         {
             _pinnedOnly = !_pinnedOnly;
-            TaskSearchPinButton.SetActive(_pinButton, _pinnedOnly);
+            ApplyPinState();
             ApplyQuery();
         }
 

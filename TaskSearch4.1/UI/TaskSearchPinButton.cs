@@ -1,7 +1,7 @@
 using System;
 using EFT.UI;
+using HarmonyLib;
 using TaskSearch.Logging;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,10 +11,8 @@ namespace TaskSearch.UI
     {
         private const float Size = 22f;
         private const float RightMargin = 36f;
-        private const float InactiveAlpha = 0.4f;
-        private const float ActiveAlpha = 1f;
 
-        internal static Button Create(TMP_InputField field, Action onClick)
+        internal static Button Create(TMPro.TMP_InputField field, Action onClick)
         {
             if (field == null)
             {
@@ -61,11 +59,19 @@ namespace TaskSearch.UI
             }
         }
 
-        internal static Sprite FindGamePinSprite(TasksPanel panel)
+        internal static bool TryReadSprites(
+            TasksPanel panel,
+            out Sprite offSprite, out Color offColor,
+            out Sprite onSprite, out Color onColor)
         {
+            offSprite = null;
+            onSprite = null;
+            offColor = Color.white;
+            onColor = Color.white;
+
             if (panel == null)
             {
-                return null;
+                return false;
             }
 
             try
@@ -75,50 +81,76 @@ namespace TaskSearch.UI
 
                 if (favorite == null)
                 {
-                    return null;
+                    return false;
                 }
 
-                Image[] images = favorite.GetComponentsInChildren<Image>(true);
-                Sprite widest = null;
+                GameObject notRoot =
+                    AccessTools.Field(typeof(NotesTaskFavoriteButton), "_notFavoriteRoot")
+                        ?.GetValue(favorite) as GameObject;
+                GameObject favRoot =
+                    AccessTools.Field(typeof(NotesTaskFavoriteButton), "_favoriteRoot")
+                        ?.GetValue(favorite) as GameObject;
 
-                for (int i = 0; i < images.Length; i++)
-                {
-                    Image image = images[i];
+                bool gotOff = ReadGlyph(notRoot, out offSprite, out offColor);
+                bool gotOn = ReadGlyph(favRoot, out onSprite, out onColor);
 
-                    if (image == null || image.sprite == null)
-                    {
-                        continue;
-                    }
-
-                    if (image.type == Image.Type.Sliced)
-                    {
-                        continue;
-                    }
-
-                    if (widest == null)
-                    {
-                        widest = image.sprite;
-                    }
-                }
-
-                return widest;
+                return gotOff && gotOn;
             }
             catch (Exception ex)
             {
                 TaskSearchLog.WarnOnce("pin-sprite", "Could not read the in-game pin icon: " + ex.Message);
-                return null;
+                return false;
             }
         }
 
-        internal static bool HasSprite(Button button)
+        private static bool ReadGlyph(GameObject root, out Sprite sprite, out Color color)
         {
-            Image icon = button == null ? null : button.GetComponent<Image>();
-            return icon != null && icon.sprite != null;
+            sprite = null;
+            color = Color.white;
+
+            if (root == null)
+            {
+                return false;
+            }
+
+            Image[] images = root.GetComponentsInChildren<Image>(true);
+            Image fallback = null;
+
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+
+                if (image == null || image.sprite == null)
+                {
+                    continue;
+                }
+
+                if (fallback == null)
+                {
+                    fallback = image;
+                }
+
+                if (image.type != Image.Type.Sliced)
+                {
+                    sprite = image.sprite;
+                    color = image.color;
+                    return true;
+                }
+            }
+
+            if (fallback != null)
+            {
+                sprite = fallback.sprite;
+                color = fallback.color;
+                return true;
+            }
+
+            return false;
         }
 
-        internal static void ApplySprite(Button button, Sprite sprite)
+        internal static void SetState(Button button, Sprite sprite, Color color)
         {
-            if (button == null || sprite == null)
+            if (button == null)
             {
                 return;
             }
@@ -131,26 +163,7 @@ namespace TaskSearch.UI
             }
 
             icon.sprite = sprite;
-            icon.color = new Color(1f, 1f, 1f, InactiveAlpha);
-        }
-
-        internal static void SetActive(Button button, bool active)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            Image icon = button.GetComponent<Image>();
-
-            if (icon == null || icon.sprite == null)
-            {
-                return;
-            }
-
-            Color color = icon.color;
-            color.a = active ? ActiveAlpha : InactiveAlpha;
-            icon.color = color;
+            icon.color = sprite == null ? new Color(1f, 1f, 1f, 0f) : color;
         }
     }
 }

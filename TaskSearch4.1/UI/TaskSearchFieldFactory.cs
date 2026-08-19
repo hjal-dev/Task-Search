@@ -115,6 +115,8 @@ namespace TaskSearch.UI
             }
         }
 
+        private const float DecorationEdgeMargin = 10f;
+
         internal static List<GameObject> CollectDecorationIcons(GameObject clone, TMP_InputField field)
         {
             List<GameObject> icons = new List<GameObject>();
@@ -138,11 +140,28 @@ namespace TaskSearch.UI
 
                 if (image.sprite != null && image.gameObject.activeSelf)
                 {
+                    PlaceAtEdge(image.rectTransform, field.transform);
                     icons.Add(image.gameObject);
                 }
             }
 
             return icons;
+        }
+
+        private static void PlaceAtEdge(RectTransform rect, Transform fieldTransform)
+        {
+            if (rect == null)
+            {
+                return;
+            }
+
+            Vector2 size = rect.sizeDelta;
+            rect.SetParent(fieldTransform, worldPositionStays: false);
+            rect.anchorMin = new Vector2(1f, 0.5f);
+            rect.anchorMax = new Vector2(1f, 0.5f);
+            rect.pivot = new Vector2(1f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(-DecorationEdgeMargin, 0f);
         }
 
         private static void DetachInheritedListeners(TMP_InputField field)
