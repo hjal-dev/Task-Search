@@ -37,6 +37,7 @@ namespace TaskSearch.UI
         private bool _descriptionRichText;
         private string _highlightSource;
         private string _highlightResult;
+        private readonly RowHighlighter _rowHighlighter = new RowHighlighter();
         private ScrollRect _list;
         private GameObject _noResultsObject;
         private Transform _favoriteSeparator;
@@ -249,10 +250,8 @@ namespace TaskSearch.UI
             _query = TaskSearchQuery.Parse(text);
             UpdateClearButton();
 
-            if (_query.IsEmpty)
-            {
-                RemoveHighlight();
-            }
+            RemoveHighlight();
+            _rowHighlighter.Clear();
 
             if (DebounceSeconds <= 0f || _query.IsEmpty)
             {
@@ -283,6 +282,22 @@ namespace TaskSearch.UI
         private void Update()
         {
             if (_query.IsEmpty || !TaskSearchConfig.Enabled.Value)
+            {
+                return;
+            }
+
+            HighlightDescription();
+
+            _rowHighlighter.Apply(
+                _panel,
+                _query,
+                TaskSearchConfig.SearchQuestNames.Value,
+                TaskSearchConfig.SearchLocations.Value);
+        }
+
+        private void HighlightDescription()
+        {
+            if (!TaskSearchConfig.SearchDescriptions.Value)
             {
                 return;
             }
@@ -584,6 +599,7 @@ namespace TaskSearch.UI
 
         private void OnDestroy()
         {
+            _rowHighlighter.Clear();
             CancelInvoke(nameof(RunPendingSearch));
             TaskSearchConfig.LayoutChanged -= ApplyLayout;
             TaskSearchConfig.SearchedFieldsChanged -= OnSearchedFieldsChanged;
