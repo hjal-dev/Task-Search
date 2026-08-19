@@ -14,7 +14,7 @@ namespace TaskSearch
     {
         internal const string PluginGuid = "com.hj.tasksearch";
         internal const string PluginName = "TaskSearch";
-        internal const string PluginVersion = "1.1.0";
+        internal const string PluginVersion = "1.1.1";
 
         private void Awake()
         {
@@ -35,7 +35,7 @@ namespace TaskSearch
             {
                 Logger.LogError(
                     $"{PluginName} could not apply any patches. Quest search is inactive. " +
-                    "This usually means this doesn't match SPT 4.0.x.");
+                    "This usually means this doesn't match SPT 4.1.x.");
                 return;
             }
 
