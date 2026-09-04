@@ -14,7 +14,7 @@ namespace TaskSearch
     {
         internal const string PluginGuid = "com.hj.tasksearch";
         internal const string PluginName = "TaskSearch";
-        internal const string PluginVersion = "1.1.1";
+        internal const string PluginVersion = "2.0.0";
 
         private void Awake()
         {
@@ -48,7 +48,10 @@ namespace TaskSearch
             {
                 new TasksPanelShowPatch(),
                 new TasksPanelShowQuestsPatch(),
-                new TasksPanelClosePatch()
+                new TasksPanelClosePatch(),
+                new QuestsListViewShowPatch(),
+                new QuestsListViewUpdateVisibilityPatch(),
+                new QuestsListViewClosePatch()
             };
 
             patches.Add(new PlayerQuestsWindowInputPatch());
