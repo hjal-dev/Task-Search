@@ -43,8 +43,43 @@ namespace TaskSearch.UI
                 }
             }
 
-            Transform root = panel.transform.root;
+            return FindTemplateUnder(panel.transform.root);
+        }
 
+        internal static TMP_InputField FindSearchTemplate(Transform root)
+        {
+            try
+            {
+                TasksScreen[] screens = Resources.FindObjectsOfTypeAll<TasksScreen>();
+                FieldInfo info = AccessTools.Field(typeof(TasksScreen), "_searchField");
+
+                if (info != null && screens != null)
+                {
+                    for (int i = 0; i < screens.Length; i++)
+                    {
+                        if (screens[i] == null)
+                        {
+                            continue;
+                        }
+
+                        TMP_InputField field = info.GetValue(screens[i]) as TMP_InputField;
+
+                        if (field != null)
+                        {
+                            return field;
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            return FindTemplateUnder(root);
+        }
+
+        internal static TMP_InputField FindTemplateUnder(Transform root)
+        {
             if (root != null)
             {
                 TMP_InputField[] fields = root.GetComponentsInChildren<TMP_InputField>(true);
@@ -75,11 +110,25 @@ namespace TaskSearch.UI
                 return null;
             }
 
+            RectTransform listRect = list != null ? list.GetComponent<RectTransform>() : null;
+            Transform parent = listRect != null ? listRect.parent : panel.transform;
+
+            return CreateUnder(parent, template, listRect, out layoutRoot);
+        }
+
+        internal static TMP_InputField CreateUnder(
+            Transform parent, TMP_InputField template, RectTransform list,
+            out RectTransform layoutRoot)
+        {
+            layoutRoot = null;
+
+            if (parent == null || template == null)
+            {
+                return null;
+            }
+
             try
             {
-                RectTransform listRect = list != null ? list.GetComponent<RectTransform>() : null;
-                Transform parent = listRect != null ? listRect.parent : panel.transform;
-
                 GameObject clone = UnityEngine.Object.Instantiate(template.gameObject, parent, worldPositionStays: false);
                 clone.name = "TaskSearchField";
                 clone.SetActive(true);
@@ -104,7 +153,7 @@ namespace TaskSearch.UI
                 ApplyPlaceholder(field);
 
                 layoutRoot = clone.GetComponent<RectTransform>();
-                ApplyLayout(layoutRoot, listRect);
+                ApplyLayout(layoutRoot, list);
 
                 return field;
             }
