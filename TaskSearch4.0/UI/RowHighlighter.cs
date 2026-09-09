@@ -56,6 +56,16 @@ namespace TaskSearch.UI
             }
         }
 
+        internal void HighlightLabel(TMP_Text label, TaskSearchQuery query)
+        {
+            if (query == null || query.IsEmpty)
+            {
+                return;
+            }
+
+            Highlight(label, query);
+        }
+
         internal void Clear()
         {
             if (_states.Count == 0)

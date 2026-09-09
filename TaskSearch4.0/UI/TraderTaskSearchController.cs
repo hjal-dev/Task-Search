@@ -28,6 +28,14 @@ namespace TaskSearch.UI
         private bool _filtersCaptured;
         private bool _subscribed;
 
+        private readonly RowHighlighter _highlighter = new RowHighlighter();
+        private NotesTaskDescription _descPanel;
+        private System.Reflection.FieldInfo _titleField;
+        private System.Reflection.FieldInfo _descField;
+        private System.Reflection.FieldInfo _locField;
+        private System.Reflection.FieldInfo _questViewField;
+        private bool _hlFieldsResolved;
+
         internal static TraderTaskSearchController For(QuestsListView view)
         {
             return view == null ? null : view.GetComponent<TraderTaskSearchController>();
@@ -91,6 +99,7 @@ namespace TaskSearch.UI
         private void DisableSearch()
         {
             _query = TaskSearchQuery.Empty;
+            _highlighter.Clear();
 
             if (_field != null)
             {
@@ -221,6 +230,7 @@ namespace TaskSearch.UI
 
             _query = TaskSearchQuery.Parse(text);
             UpdateClearButton();
+            _highlighter.Clear();
             ApplyFilter();
         }
 
@@ -344,6 +354,7 @@ namespace TaskSearch.UI
         internal void OnClosed()
         {
             _query = TaskSearchQuery.Empty;
+            _highlighter.Clear();
 
             if (_field != null && !string.IsNullOrEmpty(_field.text))
             {
@@ -351,6 +362,100 @@ namespace TaskSearch.UI
             }
 
             UpdateClearButton();
+        }
+
+        private void Update()
+        {
+            if (_query.IsEmpty
+                || _view == null
+                || !TaskSearchConfig.Enabled.Value
+                || !TaskSearchConfig.TraderSearchEnabled.Value)
+            {
+                return;
+            }
+
+            EnsureHighlightFields();
+
+            if (TaskSearchConfig.SearchQuestNames.Value)
+            {
+                QuestListItem[] rows = _view.GetComponentsInChildren<QuestListItem>(false);
+
+                for (int i = 0; i < rows.Length; i++)
+                {
+                    _highlighter.HighlightLabel(ReadText(_titleField, rows[i]), _query);
+                }
+            }
+
+            NotesTaskDescription panel = ResolveDescriptionPanel();
+
+            if (panel != null)
+            {
+                if (TaskSearchConfig.SearchDescriptions.Value)
+                {
+                    _highlighter.HighlightLabel(ReadText(_descField, panel), _query);
+                }
+
+                if (TaskSearchConfig.SearchLocations.Value)
+                {
+                    _highlighter.HighlightLabel(ReadText(_locField, panel), _query);
+                }
+            }
+        }
+
+        private void EnsureHighlightFields()
+        {
+            if (_hlFieldsResolved)
+            {
+                return;
+            }
+
+            _hlFieldsResolved = true;
+            _titleField = HarmonyLib.AccessTools.Field(typeof(QuestListItem), "_title");
+            _descField = HarmonyLib.AccessTools.Field(typeof(NotesTaskDescription), "_description");
+            _locField = HarmonyLib.AccessTools.Field(typeof(NotesTaskDescription), "_location");
+            _questViewField = HarmonyLib.AccessTools.Field(typeof(QuestsListView), "_questView");
+        }
+
+        private NotesTaskDescription ResolveDescriptionPanel()
+        {
+            if (_descPanel != null)
+            {
+                return _descPanel;
+            }
+
+            try
+            {
+                Component questView = _questViewField != null
+                    ? _questViewField.GetValue(_view) as Component
+                    : null;
+
+                if (questView != null)
+                {
+                    _descPanel = questView.GetComponentInChildren<NotesTaskDescription>(true);
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            return _descPanel;
+        }
+
+        private static TMP_Text ReadText(System.Reflection.FieldInfo field, object owner)
+        {
+            if (field == null || owner == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return field.GetValue(owner) as TMP_Text;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private bool BelongsToTrader(QuestClass quest)
@@ -440,6 +545,7 @@ namespace TaskSearch.UI
 
         private void OnDestroy()
         {
+            _highlighter.Clear();
             TaskSearchConfig.LayoutChanged -= ApplyLayout;
             TaskSearchConfig.TraderEnabledChanged -= OnTraderEnabledChanged;
 
