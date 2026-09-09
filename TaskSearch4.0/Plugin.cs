@@ -14,7 +14,7 @@ namespace TaskSearch
     {
         internal const string PluginGuid = "com.hj.tasksearch";
         internal const string PluginName = "TaskSearch";
-        internal const string PluginVersion = "1.9.0";
+        internal const string PluginVersion = "1.9.1";
 
         private void Awake()
         {
