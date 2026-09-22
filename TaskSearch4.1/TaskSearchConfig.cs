@@ -19,6 +19,7 @@ namespace TaskSearch
         internal static ConfigEntry<bool> SearchLocations { get; private set; }
         internal static ConfigEntry<bool> SearchTraders { get; private set; }
         internal static ConfigEntry<bool> SearchItems { get; private set; }
+        internal static ConfigEntry<bool> SearchRewards { get; private set; }
         internal static ConfigEntry<bool> SearchRequirements { get; private set; }
         internal static ConfigEntry<bool> SearchQuestIds { get; private set; }
 
@@ -72,6 +73,10 @@ namespace TaskSearch
             SearchItems = config.Bind(
                 SectionFields, "Items", true,
                 "Search names of items an objective refers to.");
+
+            SearchRewards = config.Bind(
+                SectionFields, "Rewards", true,
+                "Search names of visible task rewards. Hidden (?) rewards are never searched.");
 
             SearchRequirements = config.Bind(
                 SectionFields, "Requirements", true,

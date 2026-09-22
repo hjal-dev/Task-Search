@@ -38,6 +38,8 @@ namespace TaskSearch.UI
         private string _highlightSource;
         private string _highlightResult;
         private readonly RowHighlighter _rowHighlighter = new RowHighlighter();
+        private GameObject _objectivesGo;
+        private GameObject _rewardsGo;
         private ScrollRect _list;
         private GameObject _noResultsObject;
         private Transform _favoriteSeparator;
@@ -293,6 +295,58 @@ namespace TaskSearch.UI
                 _query,
                 TaskSearchConfig.SearchQuestNames.Value,
                 TaskSearchConfig.SearchLocations.Value);
+
+            ResolveDetailBlocks();
+
+            if (_objectivesGo != null && TaskSearchConfig.SearchObjectives.Value)
+            {
+                _rowHighlighter.HighlightChildren(_objectivesGo, _query);
+            }
+
+            if (_rewardsGo != null && TaskSearchConfig.SearchRewards.Value)
+            {
+                _rowHighlighter.HighlightChildren(_rewardsGo, _query);
+            }
+        }
+
+        private void ResolveDetailBlocks()
+        {
+            if ((_objectivesGo != null && _rewardsGo != null) || _panel == null)
+            {
+                return;
+            }
+
+            NotesTaskDescriptionShort description =
+                _panel.GetComponentInChildren<NotesTaskDescriptionShort>(true);
+
+            if (description == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (_objectivesGo == null)
+                {
+                    Component objectives =
+                        AccessTools.Field(typeof(NotesTaskDescriptionShort), "_objectivesView")
+                            ?.GetValue(description) as Component;
+
+                    if (objectives != null)
+                    {
+                        _objectivesGo = objectives.gameObject;
+                    }
+                }
+
+                if (_rewardsGo == null)
+                {
+                    _rewardsGo = AccessTools.Field(typeof(NotesTaskDescriptionShort), "_rewardsContainer")
+                        ?.GetValue(description) as GameObject;
+                }
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void HighlightDescription()

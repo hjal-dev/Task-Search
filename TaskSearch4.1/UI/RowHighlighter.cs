@@ -5,6 +5,7 @@ using HarmonyLib;
 using System.Reflection;
 using TaskSearch.Search;
 using TMPro;
+using UnityEngine;
 
 namespace TaskSearch.UI
 {
@@ -64,6 +65,21 @@ namespace TaskSearch.UI
             }
 
             Highlight(label, query);
+        }
+
+        internal void HighlightChildren(GameObject container, TaskSearchQuery query)
+        {
+            if (container == null || query == null || query.IsEmpty)
+            {
+                return;
+            }
+
+            TMP_Text[] labels = container.GetComponentsInChildren<TMP_Text>(false);
+
+            for (int i = 0; i < labels.Length; i++)
+            {
+                Highlight(labels[i], query);
+            }
         }
 
         internal void Clear()

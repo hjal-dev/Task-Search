@@ -62,8 +62,59 @@ namespace TaskSearch.Search
             AddQuestLocation(entry, template, questId);
             AddQuestType(entry, template, questId);
             AddConditions(entry, template, questId, resolveQuestName);
+            AddRewards(entry, template, questId, quest);
 
             return entry;
+        }
+
+        private static void AddRewards(TaskSearchEntry entry, QuestTemplate template, string questId, Quest quest)
+        {
+            if (!TaskSearchConfig.SearchRewards.Value)
+            {
+                return;
+            }
+
+            try
+            {
+                Dictionary<EQuestStatus, IReadOnlyList<QuestReward>> rewards = template.Rewards;
+
+                if (rewards == null
+                    || !rewards.TryGetValue(EQuestStatus.Success, out IReadOnlyList<QuestReward> list)
+                    || list == null)
+                {
+                    return;
+                }
+
+                EQuestStatus status = SafeGet(() => quest.QuestStatus, EQuestStatus.AvailableForStart);
+                bool showUnknown = status == EQuestStatus.AvailableForFinish || status == EQuestStatus.Success;
+
+                foreach (QuestReward reward in list)
+                {
+                    if (reward == null || (reward.unknown && !showUnknown))
+                    {
+                        continue;
+                    }
+
+                    string nameText;
+
+                    try
+                    {
+                        EFT.UI.TaskRewardValuesTextGetter.GetRewardValuesText(
+                            reward, out _, out nameText, out _, out _);
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+
+                    entry.Add(TaskSearchField.Reward, nameText);
+                }
+            }
+            catch (Exception ex)
+            {
+                TaskSearchLog.WarnOnce(
+                    "rewards:" + questId, $"Quest '{questId}' rewards unavailable: {ex.Message}");
+            }
         }
 
         private static void AddDescription(TaskSearchEntry entry, QuestTemplate template, string questId)

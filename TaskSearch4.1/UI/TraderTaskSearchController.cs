@@ -36,6 +36,10 @@ namespace TaskSearch.UI
         private System.Reflection.FieldInfo _descField;
         private System.Reflection.FieldInfo _locField;
         private System.Reflection.FieldInfo _questViewField;
+        private System.Reflection.FieldInfo _objectivesField;
+        private System.Reflection.FieldInfo _rewardsField;
+        private GameObject _objectivesGo;
+        private GameObject _rewardsGo;
         private bool _hlFieldsResolved;
 
         internal static TraderTaskSearchController For(QuestsListView view)
@@ -77,12 +81,19 @@ namespace TaskSearch.UI
             }
 
             TaskSearchConfig.TraderEnabledChanged += OnTraderEnabledChanged;
+            TaskSearchConfig.SearchedFieldsChanged += OnSearchedFieldsChanged;
             _subscribed = true;
         }
 
         private void OnTraderEnabledChanged()
         {
             Reconcile();
+        }
+
+        private void OnSearchedFieldsChanged()
+        {
+            _index.Invalidate();
+            ApplyFilter();
         }
 
         private void Reconcile()
@@ -402,6 +413,18 @@ namespace TaskSearch.UI
                     _highlighter.HighlightLabel(ReadText(_locField, panel), _query);
                 }
             }
+
+            ResolveDetailBlocks();
+
+            if (_objectivesGo != null && TaskSearchConfig.SearchObjectives.Value)
+            {
+                _highlighter.HighlightChildren(_objectivesGo, _query);
+            }
+
+            if (_rewardsGo != null && TaskSearchConfig.SearchRewards.Value)
+            {
+                _highlighter.HighlightChildren(_rewardsGo, _query);
+            }
         }
 
         private void EnsureHighlightFields()
@@ -416,6 +439,46 @@ namespace TaskSearch.UI
             _descField = HarmonyLib.AccessTools.Field(typeof(NotesTaskDescription), "_description");
             _locField = HarmonyLib.AccessTools.Field(typeof(NotesTaskDescription), "_location");
             _questViewField = HarmonyLib.AccessTools.Field(typeof(QuestsListView), "_questView");
+            _objectivesField = HarmonyLib.AccessTools.Field(typeof(QuestView), "_objectivesBlock");
+            _rewardsField = HarmonyLib.AccessTools.Field(typeof(QuestView), "_rewardsContainer");
+        }
+
+        private void ResolveDetailBlocks()
+        {
+            if ((_objectivesGo != null && _rewardsGo != null) || _questViewField == null)
+            {
+                return;
+            }
+
+            try
+            {
+                Component questView = _questViewField.GetValue(_view) as Component;
+
+                if (questView == null)
+                {
+                    return;
+                }
+
+                if (_objectivesGo == null)
+                {
+                    Component objectives = _objectivesField != null
+                        ? _objectivesField.GetValue(questView) as Component
+                        : null;
+
+                    if (objectives != null)
+                    {
+                        _objectivesGo = objectives.gameObject;
+                    }
+                }
+
+                if (_rewardsGo == null && _rewardsField != null)
+                {
+                    _rewardsGo = _rewardsField.GetValue(questView) as GameObject;
+                }
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private NotesTaskDescription ResolveDescriptionPanel()
@@ -550,6 +613,7 @@ namespace TaskSearch.UI
             _highlighter.Clear();
             TaskSearchConfig.LayoutChanged -= ApplyLayout;
             TaskSearchConfig.TraderEnabledChanged -= OnTraderEnabledChanged;
+            TaskSearchConfig.SearchedFieldsChanged -= OnSearchedFieldsChanged;
 
             if (_field != null)
             {

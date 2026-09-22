@@ -10,12 +10,13 @@ namespace TaskSearch.Search
         Item = 5,
         Description = 6,
         Prerequisite = 7,
-        QuestId = 8
+        QuestId = 8,
+        Reward = 9
     }
 
     internal static class TaskSearchFieldWeights
     {
-        internal const int Count = 9;
+        internal const int Count = 10;
 
         private static readonly int[] Weights =
         {
@@ -27,7 +28,8 @@ namespace TaskSearch.Search
             40,
             40,
             20,
-            10
+            10,
+            40
         };
 
         internal static int Of(TaskSearchField field)
